@@ -1,3 +1,12 @@
+This is a fork from Woutrrr his Omnik-Data-Logger version. 
+
+Changes:
+
++ Added the ability to publish data to a MQTT broker. Configurable from the config file.
+
+Use "pip install paho-mqtt" to install the libraries.
+
+
 # Omnik Data Logger
 =====
 Omnik Data Logger is a small script for uploading data from a Omniksol Solar 
