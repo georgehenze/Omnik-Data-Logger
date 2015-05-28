@@ -29,6 +29,10 @@ mysql_user      = config.get('mysql','mysql_user')
 mysql_pass      = config.get('mysql','mysql_pass')
 mysql_db        = config.get('mysql','mysql_db')
 
+mqtt_enabled    = config.getboolean('mqtt', 'mqtt_enabled')
+mqtt_hostname   = config.get('mqtt', 'mqtt_hostname')
+mqtt_port       = config.get('mqtt', 'mqtt_port')
+
 pvout_enabled   = config.getboolean('pvout','pvout_enabled')
 pvout_apikey    = config.get('pvout','pvout_apikey')
 pvout_sysid     = config.get('pvout','pvout_sysid')
@@ -79,6 +83,20 @@ now = datetime.datetime.now()
 if log_enabled:
     logger.info("ID: {0}".format(msg.getID())) 
 
+if mqtt_enabled:
+	import paho.mqtt.publish as mqtt
+	
+	if log_enabled:
+		logger.info('Publishing to MQTT broker')
+
+	mqtt.single("OmnikExport/" + msg.getID() + "/Date", payload=str(now.strftime("%Y-%m-%d")), hostname=mqtt_hostname, port=int(mqtt_port))	
+	mqtt.single("OmnikExport/" + msg.getID() + "/Time", payload=str(now.strftime("%H:%M:%S")), hostname=mqtt_hostname, port=int(mqtt_port))
+	mqtt.single("OmnikExport/" + msg.getID() + "/ETotal", payload=str(msg.getETotal()), hostname=mqtt_hostname, port=int(mqtt_port))
+	mqtt.single("OmnikExport/" + msg.getID() + "/EToday", payload=str(msg.getEToday()), hostname=mqtt_hostname, port=int(mqtt_port))
+	mqtt.single("OmnikExport/" + msg.getID() + "/Temp", payload=str(msg.getTemp()), hostname=mqtt_hostname, port=int(mqtt_port))
+	mqtt.single("OmnikExport/" + msg.getID() + "/HTotal", payload=str(msg.getHTotal()), hostname=mqtt_hostname, port=int(mqtt_port))
+	mqtt.single("OmnikExport/" + msg.getID() + "/VPV1", payload=str(msg.getVPV(1)), hostname=mqtt_hostname, port=int(mqtt_port))
+	mqtt.single("OmnikExport/" + msg.getID() + "/PAC1", payload=str(msg.getPAC(1)), hostname=mqtt_hostname, port=int(mqtt_port))
 
 if mysql_enabled:
     # For database output
