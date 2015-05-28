@@ -1,6 +1,7 @@
-This is a fork from Woutrrr his Omnik-Data-Logger version. 
+# This is a fork from Woutrrr his Omnik-Data-Logger version. 
+======
 
-Changes:
+## Changes:
 
 + Added the ability to publish data to a MQTT broker. Configurable from the config file.
 
