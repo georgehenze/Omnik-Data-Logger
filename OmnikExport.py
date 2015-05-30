@@ -7,6 +7,7 @@ import datetime             # Used for timestamp
 import sys
 import logging
 import ConfigParser, os
+import time
 
 # For PVoutput 
 import urllib, urllib2
@@ -32,6 +33,9 @@ mysql_db        = config.get('mysql','mysql_db')
 mqtt_enabled    = config.getboolean('mqtt', 'mqtt_enabled')
 mqtt_hostname   = config.get('mqtt', 'mqtt_hostname')
 mqtt_port       = config.get('mqtt', 'mqtt_port')
+
+sqlite_enabled  = config.get('sqlite','sqlite_enabled')
+sqlite_filename = config.get('sqlite','sqlite_filename')
 
 shelve_enabled  = config.getboolean('shelve', 'shelve_enabled')
 shelve_filename = config.get('shelve', 'shelve_filename')
@@ -95,6 +99,53 @@ if shelve_enabled:
         shelve_tmp['productie'] = { 'int':msg.getPAC(1) }
     finally:
         shelve_tmp.close()
+
+if sqlite_enabled:
+    import sqlite3
+    
+    db_exists = os.path.exists(sqlite_filename)
+    
+    if not db_exists:
+        if log_enabled:
+            logger.error('sqlite database does not exist')
+        sys.exit(1)
+    
+    db = sqlite3.connect(sqlite_filename)
+            
+    cursor = db.cursor()
+
+    query = "insert into inverter_data values (NULL " + \
+    ", '" + str(msg.getID()) + \
+    "', '" + time.strftime('%Y-%m-%d %H:%M:%S') + \
+    "', '" + str(msg.getETotal()) + \
+    "', '" + str(msg.getEToday()) + \
+    "', '" + str(msg.getTemp()) + \
+    "', '" + str(msg.getHTotal()) + \
+    "', '" + str(msg.getVPV(1)) + \
+    "', '" + str(msg.getVPV(2)) + \
+    "', '" + str(msg.getVPV(3)) + \
+    "', '" + str(msg.getIPV(1)) + \
+    "', '" + str(msg.getIPV(2)) + \
+    "', '" + str(msg.getIPV(3)) + \
+    "', '" + str(msg.getVAC(1)) + \
+    "', '" + str(msg.getVAC(2)) + \
+    "', '" + str(msg.getVAC(3)) + \
+    "', '" + str(msg.getIAC(1)) + \
+    "', '" + str(msg.getIAC(2)) + \
+    "', '" + str(msg.getIAC(3)) + \
+    "', '" + str(msg.getFAC(1)) + \
+    "', '" + str(msg.getFAC(2)) + \
+    "', '" + str(msg.getFAC(3)) + \
+    "', '" + str(msg.getPAC(1)) + \
+    "', '" + str(msg.getPAC(2)) + \
+    "', '" + str(msg.getPAC(3)) + \
+    "', '" + time.strftime('%Y-%m-%d %H:%M:%S') + "')";
+	
+    logger.info(query)
+    cursor.execute(query);
+    
+    db.commit()
+    db.close
         
 if mqtt_enabled:
     import paho.mqtt.publish as mqtt
