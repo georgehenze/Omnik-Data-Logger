@@ -33,6 +33,10 @@ mqtt_enabled    = config.getboolean('mqtt', 'mqtt_enabled')
 mqtt_hostname   = config.get('mqtt', 'mqtt_hostname')
 mqtt_port       = config.get('mqtt', 'mqtt_port')
 
+shelve_enabled  = config.getboolean('shelve', 'shelve_enabled')
+shelve_filename = config.get('shelve', 'shelve_filename')
+shelve_db       = mydir + '/' + shelve_filename
+
 pvout_enabled   = config.getboolean('pvout','pvout_enabled')
 pvout_apikey    = config.get('pvout','pvout_apikey')
 pvout_sysid     = config.get('pvout','pvout_sysid')
@@ -40,12 +44,12 @@ pvout_sysid     = config.get('pvout','pvout_sysid')
 log_enabled     = config.getboolean('log','log_enabled')
 log_filename    = mydir + '/' + config.get('log','log_filename')
 
-
 server_address = ((ip, port))
 
 logger = logging.getLogger('OmnikLogger')
 hdlr = logging.FileHandler(log_filename)
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+
 hdlr.setFormatter(formatter)
 logger.addHandler(hdlr) 
 logger.setLevel(logging.DEBUG)
@@ -83,20 +87,29 @@ now = datetime.datetime.now()
 if log_enabled:
     logger.info("ID: {0}".format(msg.getID())) 
 
-if mqtt_enabled:
-	import paho.mqtt.publish as mqtt
-	
-	if log_enabled:
-		logger.info('Publishing to MQTT broker')
+if shelve_enabled:
+    import shelve
 
-	mqtt.single("OmnikExport/" + msg.getID() + "/Date", payload=str(now.strftime("%Y-%m-%d")), hostname=mqtt_hostname, port=int(mqtt_port))	
-	mqtt.single("OmnikExport/" + msg.getID() + "/Time", payload=str(now.strftime("%H:%M:%S")), hostname=mqtt_hostname, port=int(mqtt_port))
-	mqtt.single("OmnikExport/" + msg.getID() + "/ETotal", payload=str(msg.getETotal()), hostname=mqtt_hostname, port=int(mqtt_port))
-	mqtt.single("OmnikExport/" + msg.getID() + "/EToday", payload=str(msg.getEToday()), hostname=mqtt_hostname, port=int(mqtt_port))
-	mqtt.single("OmnikExport/" + msg.getID() + "/Temp", payload=str(msg.getTemp()), hostname=mqtt_hostname, port=int(mqtt_port))
-	mqtt.single("OmnikExport/" + msg.getID() + "/HTotal", payload=str(msg.getHTotal()), hostname=mqtt_hostname, port=int(mqtt_port))
-	mqtt.single("OmnikExport/" + msg.getID() + "/VPV1", payload=str(msg.getVPV(1)), hostname=mqtt_hostname, port=int(mqtt_port))
-	mqtt.single("OmnikExport/" + msg.getID() + "/PAC1", payload=str(msg.getPAC(1)), hostname=mqtt_hostname, port=int(mqtt_port))
+    try:
+        shelve_tmp = shelve.open(shelve_db)
+        shelve_tmp['productie'] = { 'int':msg.getPAC(1) }
+    finally:
+        shelve_tmp.close()
+        
+if mqtt_enabled:
+    import paho.mqtt.publish as mqtt
+    
+    if log_enabled:
+        logger.info('Publishing to MQTT broker')
+
+    mqtt.single("OmnikExport/" + msg.getID() + "/Date", payload=str(now.strftime("%Y-%m-%d")), hostname=mqtt_hostname, port=int(mqtt_port)) 
+    mqtt.single("OmnikExport/" + msg.getID() + "/Time", payload=str(now.strftime("%H:%M:%S")), hostname=mqtt_hostname, port=int(mqtt_port))
+    mqtt.single("OmnikExport/" + msg.getID() + "/ETotal", payload=str(msg.getETotal()), hostname=mqtt_hostname, port=int(mqtt_port))
+    mqtt.single("OmnikExport/" + msg.getID() + "/EToday", payload=str(msg.getEToday()), hostname=mqtt_hostname, port=int(mqtt_port))
+    mqtt.single("OmnikExport/" + msg.getID() + "/Temp", payload=str(msg.getTemp()), hostname=mqtt_hostname, port=int(mqtt_port))
+    mqtt.single("OmnikExport/" + msg.getID() + "/HTotal", payload=str(msg.getHTotal()), hostname=mqtt_hostname, port=int(mqtt_port))
+    mqtt.single("OmnikExport/" + msg.getID() + "/VPV1", payload=str(msg.getVPV(1)), hostname=mqtt_hostname, port=int(mqtt_port))
+    mqtt.single("OmnikExport/" + msg.getID() + "/PAC1", payload=str(msg.getPAC(1)), hostname=mqtt_hostname, port=int(mqtt_port))
 
 if mysql_enabled:
     # For database output
